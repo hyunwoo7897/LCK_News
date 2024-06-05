@@ -81,7 +81,7 @@ subcategories = {
     }
 }
 
-def converter(category_choice, subcategory_choice):
+def converter(category_choice, subcategory_choice, item_num = 3):
     category_name, category_code = categories[category_choice]
     subcategory_name, subcategory_code = subcategories[category_name][subcategory_choice]
 
@@ -101,7 +101,7 @@ def converter(category_choice, subcategory_choice):
     news_list = []
 
     # 첫 번째 섹션 뉴스 제목과 링크 추출
-    for i in range(1, 7):
+    for i in range(1, item_num+1):
         elements = soup.select(f'#newsct > div.section_latest > div > div.section_latest_article._CONTENT_LIST._PERSIST_META > div:nth-child(1) > ul > li:nth-of-type({i}) > div > div > div.sa_text > a')
         if elements:
             title = elements[0].select_one('strong').text.strip()

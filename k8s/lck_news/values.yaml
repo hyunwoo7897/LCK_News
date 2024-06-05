@@ -1,0 +1,23 @@
+replicaCount: 2
+
+backend:
+  image:
+    repository: "docker.io/isnan7897/lck_news_back"
+    tag: "v0.15"
+  service:
+    port: 8000
+  env:
+    SQLALCHEMY_DATABASE_URL: "sqlite:///./test.db"
+
+frontend:
+  image:
+    repository: "docker.io/isnan7897/lck_news_front"
+    tag: "v0.22"
+  service:
+    port: 80
+    targetPort: 8501
+  env:
+    BASE_URL: "http://backend:8000"
+
+secret:
+  OPENAI_API_KEY: "write your key here"

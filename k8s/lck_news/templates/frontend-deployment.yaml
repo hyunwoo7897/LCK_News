@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    app: frontend
+    dash.ulagbulag.io/subject: mobilex-exp
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: frontend
+      dash.ulagbulag.io/subject: mobilex-exp
+  template:
+    metadata:
+      labels:
+        app: frontend
+        dash.ulagbulag.io/subject: mobilex-exp
+    spec:
+      containers:
+        - name: server
+          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+          ports:
+          - name: http
+            protocol: TCP
+            containerPort: {{ .Values.frontend.service.targetPort }}
+          env:
+          - name: BASE_URL
+            value: "{{ .Values.frontend.env.BASE_URL }}"

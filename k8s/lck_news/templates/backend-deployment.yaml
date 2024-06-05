@@ -6,7 +6,7 @@ metadata:
     app: backend
     dash.ulagbulag.io/subject: mobilex-exp
 spec:
-  replicas: 2
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app: backend
@@ -19,40 +19,16 @@ spec:
     spec:
       containers:
       - name: backend
-        image: docker.io/isnan7897/lck_news_back:v0.15
+        image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
         ports:
         - name: http
           protocol: TCP
-          containerPort: 8000
+          containerPort: {{ .Values.backend.service.port }}
         env:
         - name: SQLALCHEMY_DATABASE_URL
-          value: "sqlite:///./test.db"  # Update this if you use a different database
+          value: "{{ .Values.backend.env.SQLALCHEMY_DATABASE_URL }}"
         - name: OPENAI_API_KEY
           valueFrom:
             secretKeyRef:
               name: openai
               key: OPENAI_API_KEY
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: backend
-  labels:
-    app: backend
-    dash.ulagbulag.io/subject: mobilex-exp
-spec:
-  type: ClusterIP
-  selector:
-    app: backend
-  ports:
-    - name: http
-      protocol: TCP
-      port: 8000
-      targetPort: 8000
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: openai
-stringData:
-  OPENAI_API_KEY: "write your key here"

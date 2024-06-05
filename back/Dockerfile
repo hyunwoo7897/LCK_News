@@ -11,7 +11,6 @@ ENV PYTHONPATH "${PYTHONPATH}:/app"
 
 # Set other environment variables
 ENV PYTHONUNBUFFERED 1
-ENV OPENAI_API_KEY 'sk-proj-OYPQSYErvElP3Hkl7vqhT3BlbkFJZgKADqTwdsEoqGXBqwrP'
 
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt

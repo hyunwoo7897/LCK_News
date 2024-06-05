@@ -4,8 +4,11 @@ from urllib.parse import quote
 import os
 
 # Define the base URL of your FastAPI backend
-BASE_URL = os.getenv("BASE_URL","http://localhost:8000")
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
+
 # Function to make a POST request to create a new item
+
+
 def create_item(category_choice, subcategory_choice):
     try:
         url = f"{BASE_URL}/items/"
@@ -16,6 +19,9 @@ def create_item(category_choice, subcategory_choice):
     except requests.RequestException:
         st.error("저장된 기사가 없습니다. 기사 크롤링을 진행해주세요.")
         return None
+
+
+
 
 # Function to make a GET request to retrieve an item by ID
 def get_item(item_id):
@@ -61,16 +67,15 @@ def get_items_by_category_and_subcategory(category, subcategory):
 
 # Function to display item details
 def display_item(item):
-    st.write(f"Category: {item['category']} - {item['subcategory']}")
-    st.write(f"New Title: {item['new_title']}")
-    st.write(f"Original Title: {item['original_title']}")
-    with st.expander("View Summary"):
-        st.write(f"Summary: {item['summary']}")
+    st.write(f"카테고리 : {item['category']} - {item['subcategory']}")
+    st.write(f"새 제목  : {item['new_title']}")
+    st.write(f"기사 요약: {item['summary']}")
     
-    with st.expander("View Original Content"):
-        st.write(f"News Body: {item['news_body']}")
+    with st.expander("원제목/원문 보기"):
+        st.write(f"원제목 : {item['original_title']}")
+        st.write(f"기사 원문 : {item['news_body']}")
     
-    with st.expander("View Link"):
+    with st.expander("링크 보기"):
         st.markdown(f"[News Link]({item['news_link']})")
 
 # Custom CSS to style the navigation bar
@@ -106,6 +111,7 @@ st.markdown("""
 st.markdown("<h1 style='text-align: center; color: #FF6347;'>LCK NEWS</h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center; color: #4682B4;'>더 정확한 뉴스 전달 매체</h3>", unsafe_allow_html=True)
 
+st.header("1. 요약하고 싶은 기사의 카테고리 선택")
 # Navigation bar for Category selection
 categories = {
     1: '정치', 2: '경제', 3: '사회', 4: '생활/문화', 5: '세계', 6: 'IT/과학'
@@ -148,29 +154,31 @@ st.markdown('</div>', unsafe_allow_html=True)
 # Display the selected category
 if st.session_state.selected_category:
     selected_category_name = categories[st.session_state.selected_category]
-    st.markdown(f"<h4>Selected Category: {selected_category_name}</h4>", unsafe_allow_html=True)
+    st.markdown(f"<h4>- 카테고리: {selected_category_name}</h4>", unsafe_allow_html=True)
     
     if selected_category_name in subcategories:
         st.markdown('<div class="nav-bar">', unsafe_allow_html=True)
         subcategory_columns = st.columns(len(subcategories[selected_category_name]))
         for i, (key, value) in enumerate(subcategories[selected_category_name].items()):
             with subcategory_columns[i]:
-                if st.button(value, key=f"subcategory_{key}"):
+                if st.button(value, key=f"subcategory_{st.session_state.selected_category}_{key}"):
                     st.session_state.selected_subcategory = key
         st.markdown('</div>', unsafe_allow_html=True)
         
         if st.session_state.selected_subcategory:
             selected_subcategory_name = subcategories[selected_category_name][st.session_state.selected_subcategory]
-            st.markdown(f"<h4>Selected Subcategory: {selected_subcategory_name}</h4>", unsafe_allow_html=True)
-            if st.button("생성"):
+            st.markdown(f"<h4>- 서브 카테고리: {selected_subcategory_name}</h4>", unsafe_allow_html=True)
+            
+            if st.button("기사 생성", key="create_button"):
                 response = create_item(st.session_state.selected_category, st.session_state.selected_subcategory)
                 if response:
                     st.success("기사 생성 완료!")
                     for item in response:
                         display_item(item)
 
-st.header("생성된 모든 기사 출력")
-if st.button("보기"):
+st.header("2. 모든 기사 가져오기")
+show_all_items = st.checkbox("모든 기사 보기")
+if show_all_items:
     items = get_all_items()
     if items:
         for item in items:
@@ -179,7 +187,7 @@ if st.button("보기"):
     else:
         st.error("저장된 기사가 없습니다. 기사 크롤링을 진행해주세요.")
 
-st.header("저장된 기사 보기 (카테고리)")
+st.header("3. 카테고리별 기사 가져오기")
 st.markdown('<div class="nav-bar">', unsafe_allow_html=True)
 retrieve_category_columns = st.columns(len(categories))
 for i, (key, value) in enumerate(categories.items()):
@@ -190,15 +198,15 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 if st.session_state.selected_retrieve_category:
     retrieve_category_name = categories[st.session_state.selected_retrieve_category]
-    st.markdown(f"<h4>카테고리: {retrieve_category_name}</h4>", unsafe_allow_html=True)
-    if st.button("보기"):
+    st.markdown(f"<h4>- 카테고리: {retrieve_category_name}</h4>", unsafe_allow_html=True)
+    if st.button(f"{retrieve_category_name} 기사 가져오기", key=f"retrieve_category_button_{retrieve_category_name}"):
         items = get_items_by_category(retrieve_category_name)
         if items:
             for item in items:
                 display_item(item)
                 st.write("---")
 
-st.header("저장된 기사 보기 (카테고리-서브)")
+st.header("4. 세부 카테고리별 기사 가져오기")
 st.markdown('<div class="nav-bar">', unsafe_allow_html=True)
 retrieve_category_columns = st.columns(len(categories))
 for i, (key, value) in enumerate(categories.items()):
@@ -209,19 +217,19 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 if st.session_state.selected_retrieve_cat_subcat_category:
     retrieve_category_name = categories[st.session_state.selected_retrieve_cat_subcat_category]
-    st.markdown(f"<h4>카테고리: {retrieve_category_name}</h4>", unsafe_allow_html=True)
+    st.markdown(f"<h4>- 카테고리: {retrieve_category_name}</h4>", unsafe_allow_html=True)
     st.markdown('<div class="nav-bar">', unsafe_allow_html=True)
     subcategory_columns = st.columns(len(subcategories[retrieve_category_name]))
     for i, (key, value) in enumerate(subcategories[retrieve_category_name].items()):
         with subcategory_columns[i]:
-            if st.button(value, key=f"retrieve_cat_subcat_subcategory_{key}"):
+            if st.button(value, key=f"retrieve_cat_subcat_subcategory_{retrieve_category_name}_{key}"):
                 st.session_state.selected_retrieve_cat_subcat_subcategory = key
     st.markdown('</div>', unsafe_allow_html=True)
     
     if st.session_state.selected_retrieve_cat_subcat_subcategory:
         subcategory_name = subcategories[retrieve_category_name][st.session_state.selected_retrieve_cat_subcat_subcategory]
-        st.markdown(f"<h4>서브 카테고리: {subcategory_name}</h4>", unsafe_allow_html=True)
-        if st.button("기사 보기"):
+        st.markdown(f"<h4>- 서브 카테고리: {subcategory_name}</h4>", unsafe_allow_html=True)
+        if st.button(f"{subcategory_name} 기사 가져오기", key=f"retrieve_cat_subcat_subcategory_button_{retrieve_category_name}_{subcategory_name}"):
             items = get_items_by_category_and_subcategory(retrieve_category_name, subcategory_name)
             if items:
                 for item in items:
