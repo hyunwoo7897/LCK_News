@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    app: frontend
+    dash.ulagbulag.io/subject: mobilex-exp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+      dash.ulagbulag.io/subject: mobilex-exp
+  template:
+    metadata:
+      labels:
+        app: frontend
+        dash.ulagbulag.io/subject: mobilex-exp
+    spec:
+      containers:
+        - name: server
+          image: docker.io/isnan7897/lck_news_front:v0.7
+          ports:
+          - name: http
+            protocol: TCP
+            containerPort: 8501
+          env:
+          - name: BASE_URL
+            value: "http://backend:8000"  # Use the service name within the Kubernetes cluster
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  labels:
+    app: frontend
+    dash.ulagbulag.io/subject: mobilex-exp
+spec:
+  type: LoadBalancer
+  selector:
+    app: frontend
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 8501  # Forward port 80 to port 8501 on the container

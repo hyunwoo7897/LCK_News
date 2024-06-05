@@ -1,10 +1,11 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Query
 from sqlalchemy import create_engine, Column, Integer, String, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List
-from utils.crawler import converter, categories, subcategories  # Import the converter function
+from crawler import converter, categories, subcategories
+from urllib.parse import unquote, quote
 
 # Create FastAPI app
 app = FastAPI()
@@ -44,7 +45,7 @@ class ItemResponse(BaseModel):
     news_body: str
 
     class Config:
-        from_attributes = True  # Updated for Pydantic v2
+        orm_mode = True
 
 # Dependency to get a database session
 def get_db():
@@ -68,20 +69,14 @@ Base.metadata.create_all(bind=engine)
 # Define your FastAPI endpoints
 @app.post("/items/", response_model=List[ItemResponse])
 def create_items(item: ItemCreate, db: Session = Depends(get_db)):
-    # Get category and subcategory names
     category_name, subcategory_name = categories[item.category_choice][0], subcategories[categories[item.category_choice][0]][item.subcategory_choice][0]
-    
-    # Use the converter function
     converted_data = converter(item.category_choice, item.subcategory_choice)
     
-    # Check if any data is returned
     if not converted_data:
         raise HTTPException(status_code=404, detail="No news articles found")
 
     stored_items = []
-    
     for data in converted_data:
-        # Create the Item instance with category and subcategory
         db_item = Item(
             category=category_name,
             subcategory=subcategory_name,
@@ -91,14 +86,10 @@ def create_items(item: ItemCreate, db: Session = Depends(get_db)):
             news_link=data['link'],
             news_body=data['content']
         )
-        # Add to the session
         db.add(db_item)
         stored_items.append(db_item)
     
-    # Commit all items at once
     db.commit()
-
-    # Refresh to get the generated IDs
     for item in stored_items:
         db.refresh(item)
 
@@ -110,3 +101,30 @@ def read_item(item_id: int, db: Session = Depends(get_db)):
     if item is None:
         raise HTTPException(status_code=404, detail="Item not found")
     return item
+
+@app.get("/items/", response_model=List[ItemResponse])
+def read_all_items(db: Session = Depends(get_db)):
+    items = db.query(Item).all()
+    return items
+
+@app.get("/items/category/", response_model=List[ItemResponse])
+def read_items_by_category(category: str = Query(...), db: Session = Depends(get_db)):
+    decoded_category = unquote(category)
+    items = db.query(Item).filter(Item.category == decoded_category).all()
+    if not items:
+        raise HTTPException(status_code=404, detail="Items not found")
+    return items
+
+@app.get("/items/category/subcategory/", response_model=List[ItemResponse])
+def read_items_by_category_and_subcategory(category: str = Query(...), subcategory: str = Query(...), db: Session = Depends(get_db)):
+    decoded_category = unquote(category)
+    decoded_subcategory = unquote(subcategory)
+    
+    # Debugging output
+    print(f"Decoded Category: {decoded_category}")
+    print(f"Decoded Subcategory: {decoded_subcategory}")
+    
+    items = db.query(Item).filter(Item.category == decoded_category, Item.subcategory == decoded_subcategory).all()
+    if not items:
+        raise HTTPException(status_code=404, detail="Items not found")
+    return items

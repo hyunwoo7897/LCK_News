@@ -4,8 +4,9 @@ import pandas as pd
 import openai
 import os
 
-# OpenAI API 키 설정
-openai.api_key = 'your_openai_api_key_here' # 여기에 실제 API 키를 입력하세요
+# OpenAI API key 설정
+openai.api_key = os.getenv('OPENAI_API_KEY')
+#openai.api_key ='sk-proj-OYPQSYErvElP3Hkl7vqhT3BlbkFJZgKADqTwdsEoqGXBqwrP'
 
 # 카테고리와 세부 카테고리 매핑
 categories = {

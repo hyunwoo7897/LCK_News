@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlalchemy
+databases
+pydantic
+requests
+beautifulsoup4
+pandas
+openai==0.28
